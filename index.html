@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>藪の中 — 検非違使庁記録</title>
+<meta name="description" content="藪の中 — 検索型探索テキストADV。平安の山城、藪で見つかった骸をめぐる証言を、言葉で手繰る。">
+<meta name="theme-color" content="#0b110c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="藪の中">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* 藪の薄暗がり：墨のような緑黒＋提灯の琥珀（v13） */
+    --sea-0:#050806;  /* 最暗部・墨 */
+    --sea-1:#0b110c;  /* 地の色・夜の藪 */
+    --sea-2:#141b14;  /* カード地・苔むした暗がり */
+    --sea-3:#28331f;  /* 罫・木肌／笹の影 */
+    --fog:#e8e7db;    /* 本文・古びた紙の白 */
+    --fog-dim:#8c9482;/* 副次テキスト・苔色のグレー */
+    --lamp:#e7a740;   /* 提灯の灯 */
+    --lamp-soft:#f0c876;
+    --teal:#869a6f;   /* ラベル・木の葉の緑（旧teal名を流用） */
+    --line:rgba(150,168,132,.14);
+    --mincho:"Shippori Mincho", serif;
+    --gothic:"Zen Kaku Gothic New", system-ui, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    position:relative;
+    background:
+      radial-gradient(1100px 460px at 50% -12%, rgba(231,167,64,.07), transparent 62%),
+      radial-gradient(820px 640px at 88% 120%, rgba(96,128,86,.05), transparent 60%),
+      var(--sea-1);
+    color:var(--fog);
+    font-family:var(--gothic);
+    line-height:1.6;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 藪の暗がり：紙のざらつき＋竹むらの影＋周縁を閉じるヴィネット（静止レイヤー） */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+      radial-gradient(125% 100% at 50% 40%, transparent 50%, rgba(3,6,4,.55) 80%, rgba(2,4,3,.92) 100%);
+  }
+  /* 霧と、杉竹の梢から落ちる一筋の西日（ゆっくり漂う） */
+  body::after{
+    content:"";position:fixed;inset:-12%;z-index:0;pointer-events:none;
+    background:
+      linear-gradient(108deg, transparent 41%, rgba(231,167,64,.055) 49%, rgba(231,167,64,.02) 53%, transparent 61%),
+      radial-gradient(560px 380px at 22% 28%, rgba(150,168,150,.05), transparent 70%),
+      radial-gradient(620px 420px at 78% 78%, rgba(120,140,120,.045), transparent 72%);
+    animation:drift 36s ease-in-out infinite alternate;
+    will-change:transform;
+  }
+  @keyframes drift{
+    from{transform:translate3d(-2%,-1%,0) scale(1.02);}
+    to{transform:translate3d(2%,2%,0) scale(1.06);}
+  }
+  /* 淡い墨絵の竹むら（左右の端に沈める。中央＝本文列は空ける） */
+  .grove{position:fixed;top:0;bottom:0;z-index:0;pointer-events:none;width:min(32vw,400px);opacity:.5;}
+  .grove svg{width:100%;height:100%;}
+  .grove-l{left:0;}
+  .grove-r{right:0;transform:scaleX(-1);}
+  @media(max-width:720px){ .grove{width:46vw;opacity:.4;} }
+  .wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:0 16px 64px;}
+
+  /* ---- header ---- */
+  header{
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(var(--sea-1) 80%, rgba(11,17,12,0));
+    padding:16px 0 14px;
+  }
+
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+    color:var(--teal);text-transform:uppercase;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  .progress{color:var(--fog-dim);white-space:nowrap;}
+  .titlerow{display:flex;align-items:baseline;gap:12px;margin:6px 0 4px;flex-wrap:wrap;}
+  h1{
+    font-family:var(--mincho);font-weight:600;
+    font-size:clamp(22px,5vw,30px);letter-spacing:.14em;margin:0;
+  }
+  h1 .lamp{color:var(--lamp);}
+  .case{font-size:12.5px;color:var(--fog-dim);letter-spacing:.04em;}
+
+  /* ---- query line ---- */
+  .query{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    border:1px solid var(--sea-3);
+    background:linear-gradient(var(--sea-2),var(--sea-0));
+    border-radius:2px;padding:11px 14px;margin-top:10px;
+    box-shadow:0 0 0 1px rgba(244,180,66,0) ;
+    transition:box-shadow .25s, border-color .25s;
+  }
+  .query:focus-within{border-color:var(--lamp);box-shadow:0 0 24px -6px rgba(244,180,66,.4);}
+  .query .prompt{font-family:var(--mono);color:var(--lamp);font-size:15px;}
+  .query input{
+    flex:1 1 130px;min-width:0;background:transparent;border:none;outline:none;
+    color:var(--fog);font-family:var(--gothic);font-size:16px;letter-spacing:.03em;
+    caret-color:var(--lamp);
+  }
+  .query input::placeholder{color:var(--fog-dim);}
+  .query button{
+    font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+    background:transparent;border:1px solid var(--sea-3);color:var(--lamp-soft);
+    padding:6px 12px;border-radius:2px;cursor:pointer;transition:.2s;
+  }
+  .query button:hover{border-color:var(--lamp);background:rgba(244,180,66,.08);}
+  .query button.util{color:var(--fog-dim);}
+  .query button.util:hover{color:var(--lamp-soft);}
+
+  /* ---- panels (history / settings) ---- */
+  .panel{
+    border:1px solid var(--sea-3);
+    background:linear-gradient(var(--sea-2),var(--sea-0));
+    border-radius:2px;padding:12px 14px;margin-top:8px;
+    animation:rise .25s ease both;
+  }
+  .panel .pttl{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--teal);text-transform:uppercase;margin-bottom:8px;}
+  .histempty{color:var(--fog-dim);font-size:12.5px;}
+  .histitem{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    width:100%;text-align:left;background:transparent;border:none;border-bottom:1px dashed var(--line);
+    padding:6px 2px;cursor:pointer;color:var(--fog);font-family:var(--gothic);font-size:13.5px;letter-spacing:.03em;
+  }
+  .histitem:hover{color:var(--lamp-soft);}
+  .histitem .n{font-family:var(--mono);font-size:11px;color:var(--fog-dim);white-space:nowrap;}
+  .cmd{
+    display:block;width:100%;text-align:left;font-family:var(--gothic);font-size:13px;
+    background:transparent;border:1px solid var(--sea-3);color:var(--fog);
+    padding:8px 11px;border-radius:2px;cursor:pointer;margin-top:6px;transition:.2s;
+  }
+  .cmd:hover{border-color:var(--lamp);color:var(--lamp-soft);}
+  .confirm{
+    border:1px solid rgba(244,180,66,.35);background:rgba(244,180,66,.05);
+    padding:9px 11px;margin-top:6px;font-size:12.5px;color:var(--lamp-soft);line-height:1.8;border-radius:2px;
+  }
+  .confirm button{
+    margin:6px 8px 0 0;font-family:var(--mono);font-size:12px;padding:4px 16px;
+    background:transparent;border:1px solid var(--sea-3);color:var(--fog);border-radius:2px;cursor:pointer;transition:.2s;
+  }
+  .confirm button:hover{border-color:var(--lamp);color:var(--lamp-soft);}
+
+  /* ---- quit overlay ---- */
+  #quitOverlay{
+    position:fixed;inset:0;z-index:99;
+    background:rgba(5,8,6,.97);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+    text-align:center;padding:20px;animation:rise .5s ease both;
+  }
+  #quitOverlay p{font-family:var(--mincho);font-size:17px;letter-spacing:.12em;color:var(--fog);margin:0;line-height:2.1;}
+  #quitOverlay button{
+    font-family:var(--mono);font-size:12px;letter-spacing:.1em;
+    background:transparent;border:1px solid var(--sea-3);color:var(--lamp-soft);
+    padding:8px 22px;border-radius:2px;cursor:pointer;transition:.2s;
+  }
+  #quitOverlay button:hover{border-color:var(--lamp);background:rgba(244,180,66,.08);}
+
+  /* ---- intro overlay（導入。人間失格版の作りを踏襲） ---- */
+  #introOverlay{
+    position:fixed;inset:0;z-index:200;
+    background:
+      radial-gradient(900px 520px at 50% -6%, rgba(231,167,64,.07), transparent 65%),
+      radial-gradient(700px 520px at 50% 110%, rgba(96,128,86,.05), transparent 72%),
+      var(--sea-0);
+    display:flex;flex-direction:column;overflow-y:auto;
+    animation:fadein .8s ease both;
+  }
+  @keyframes fadein{ from{opacity:0;} to{opacity:1;} }
+  /* margin:auto で上下中央。内容が画面より高いときは上を切らずスクロール */
+  .introcard{max-width:600px;width:100%;margin:auto;padding:44px 22px;text-align:left;}
+  .introcard .kicker{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;color:var(--teal);
+    text-transform:uppercase;margin-bottom:22px;text-align:center;
+  }
+  .introcard .story{
+    font-family:var(--mincho);font-size:16px;line-height:2.35;color:var(--fog);
+    letter-spacing:.04em;margin:0 0 14px;
+  }
+  .introcard .story .em{color:var(--lamp-soft);}
+  .introcard .gloss{font-family:var(--gothic);font-size:12.5px;color:var(--fog-dim);letter-spacing:.02em;}
+  .introcard .ask{
+    font-family:var(--mincho);font-size:16.5px;line-height:2.2;color:var(--lamp-soft);
+    letter-spacing:.06em;margin:24px 0 30px;text-align:center;
+  }
+  .introcard .enter{display:flex;justify-content:center;}
+  #introEnter{
+    font-family:var(--mono);font-size:13px;letter-spacing:.14em;
+    background:transparent;border:1px solid var(--sea-3);color:var(--lamp-soft);
+    padding:12px 34px;border-radius:2px;cursor:pointer;transition:.25s;
+  }
+  #introEnter:hover{border-color:var(--lamp);background:rgba(231,167,64,.09);box-shadow:0 0 24px -8px rgba(231,167,64,.5);}
+
+  /* ---- layout ---- */
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:22px;align-items:start;}
+  @media(max-width:720px){ .grid{grid-template-columns:1fr;gap:16px;} }
+
+  /* ---- map ---- */
+  .map{
+    position:sticky;top:130px;
+    border:1px solid var(--sea-3);border-radius:3px;overflow:hidden;
+    background:var(--sea-0);
+    box-shadow:inset 0 0 40px -20px rgba(0,0,0,.9);
+  }
+  @media(max-width:720px){ .map{position:static;top:auto;} }
+  .map .caphead{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--teal);padding:9px 12px;border-bottom:1px solid var(--line);text-transform:uppercase;}
+  svg{display:block;width:100%;height:auto;}
+  .node{cursor:pointer;}
+  .node .dot{transition:.3s;}
+  .node text{font-family:var(--gothic);font-size:11px;fill:var(--fog-dim);letter-spacing:.05em;transition:.3s;}
+  .node:hover .dot{fill:var(--lamp);}
+  .node:hover text{fill:var(--fog);}
+  .node.hit .dot{fill:var(--lamp);filter:drop-shadow(0 0 7px rgba(231,167,64,.95));}
+  .node.hit text{fill:var(--lamp-soft);}
+  .maplabel{font-family:var(--gothic);font-size:9px;fill:#54664a;letter-spacing:.12em;}
+  .mapnote{font-size:11px;color:var(--fog-dim);padding:8px 12px;border-top:1px solid var(--line);line-height:1.7;}
+
+  /* ---- results ---- */
+  .results{position:relative;min-height:200px;}
+
+  .rcount{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--fog-dim);margin-bottom:12px;text-transform:uppercase;}
+
+  .card{
+    border:1px solid var(--line);border-left:2px solid var(--sea-3);
+    background:linear-gradient(158deg, rgba(26,34,24,.94), rgba(13,19,14,.86));
+    border-radius:2px;padding:15px 17px;margin-bottom:13px;
+    box-shadow:0 6px 22px -16px rgba(0,0,0,.9);
+    animation:rise .35s ease both;
+  }
+  /* 新出の調書は提灯にふっと照らされたように灯る */
+  .card.fresh{
+    border-left-color:var(--lamp);
+    box-shadow:inset 2px 0 20px -12px rgba(231,167,64,.55), 0 6px 22px -16px rgba(0,0,0,.9);
+  }
+  @keyframes rise{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
+  .card .meta{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;}
+  .card .src{font-family:var(--gothic);font-weight:700;font-size:13px;letter-spacing:.06em;color:var(--fog);}
+  .card .srcnote{font-weight:400;font-size:11px;color:var(--fog-dim);letter-spacing:.02em;margin-left:2px;}
+  .copybtn{
+    margin-left:5px;font-family:var(--mono);font-size:10px;line-height:1;
+    padding:2px 7px;border:1px solid var(--sea-3);background:transparent;
+    color:var(--lamp-soft);border-radius:2px;cursor:pointer;vertical-align:middle;
+    transition:.2s;
+  }
+  .copybtn:hover{border-color:var(--lamp);background:rgba(244,180,66,.08);}
+  .card .id{font-family:var(--mono);font-size:10.5px;color:var(--fog-dim);letter-spacing:.08em;}
+  .card .body{font-family:var(--mincho);font-size:15.5px;line-height:1.9;color:#ece7db;letter-spacing:.02em;}
+
+  .empty-state{
+    border:1px dashed var(--sea-3);border-radius:3px;padding:26px 20px;text-align:center;
+    color:var(--fog-dim);font-size:14px;font-family:var(--mincho);line-height:1.9;
+  }
+
+  #epilogue{
+    margin-top:20px;border:1px solid rgba(244,180,66,.35);
+    background:radial-gradient(400px 120px at 20% 0%,rgba(244,180,66,.09),transparent),var(--sea-2);
+    border-radius:2px;padding:16px 18px;
+    animation:rise .6s ease both;
+  }
+  #epilogue .lab{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--lamp);margin-bottom:7px;}
+  #epilogue p{font-family:var(--mincho);font-size:15px;margin:0;color:var(--lamp-soft);letter-spacing:.03em;line-height:2;}
+  .hidden{display:none;}
+
+  @media(prefers-reduced-motion:reduce){
+    .card{animation:none;}
+    body::after{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="grove grove-l" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 1000" width="460" height="1000" preserveAspectRatio="xMinYMax slice">
+<defs>
+  <filter id="soft" x="-30%" y="-10%" width="160%" height="130%"><feGaussianBlur stdDeviation="1.4"/></filter>
+  <filter id="softer" x="-30%" y="-10%" width="160%" height="130%"><feGaussianBlur stdDeviation="3.4"/></filter>
+</defs>
+<g filter="url(#softer)"><path d="M 40 1040 Q 66 550 50.4 60" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 34.94748021657643 1002 Q 41.24748021657643 997 47.547480216576425 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 39.11120533111204 854 Q 45.411205331112036 849 51.71120533111203 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 42.56334693877551 706 Q 48.86334693877551 701 55.163346938775504 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 45.30390503956685 558 Q 51.60390503956685 553 57.903905039566844 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 47.33287963348605 410 Q 53.63287963348605 405 59.932879633486046 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 48.650270720533115 262 Q 54.95027072053311 257 61.25027072053311 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 49.25607830070804 114 Q 55.55607830070804 109 61.856078300708035 114" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 150 1040 Q 170 565 158 90" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 144.68925207756232 1002 Q 150.98925207756233 997 157.28925207756234 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 147.97952576177283 854 Q 154.27952576177285 849 160.57952576177286 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 150.6873108033241 706 Q 156.9873108033241 701 163.28731080332412 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 152.81260720221604 558 Q 159.11260720221605 553 165.41260720221607 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 154.35541495844873 410 Q 160.65541495844874 405 166.95541495844876 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 155.31573407202214 262 Q 161.61573407202215 257 167.91573407202216 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 300 1040 Q 314 580 305.6 120" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 294.4145557655954 1002 Q 300.71455576559543 997 307.01455576559545 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 296.78227599243854 854 Q 303.08227599243855 849 309.38227599243857 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 298.71522873345936 706 Q 305.01522873345937 701 311.3152287334594 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 300.2134139886578 558 Q 306.5134139886578 553 312.8134139886578 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 301.276831758034 410 Q 307.576831758034 405 313.87683175803403 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 301.9054820415879 262 Q 308.2054820415879 257 314.5054820415879 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/></g>
+<g filter="url(#soft)"><path d="M 95 1040 Q 125 535 107 30" fill="none" stroke="#46583c" stroke-width="12" stroke-linecap="round" opacity="0.5"/><path d="M 85.59751004803451 1002 Q 96.3975100480345 997 107.1975100480345 1002" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 90.85045387707088 834 Q 101.65045387707087 829 112.45045387707087 834" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 95.10735418096264 666 Q 105.90735418096264 661 116.70735418096264 666" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 98.36821095970984 498 Q 109.16821095970984 493 119.96821095970984 498" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 100.63302421331242 330 Q 111.43302421331242 325 122.23302421331242 330" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 101.90179394177042 162 Q 112.70179394177042 157 123.50179394177042 162" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 220 1040 Q 242 555 228.8 70" fill="none" stroke="#46583c" stroke-width="12" stroke-linecap="round" opacity="0.5"/><path d="M 210.26621320012754 1002 Q 221.06621320012755 997 231.86621320012756 1002" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 214.2540750345414 834 Q 225.0540750345414 829 235.8540750345414 834" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 217.45002104368157 666 Q 228.25002104368158 661 239.0500210436816 666" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 219.85405122754807 498 Q 230.65405122754808 493 241.4540512275481 498" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 221.4661655861409 330 Q 232.26616558614091 325 243.06616558614093 330" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 222.28636411946007 162 Q 233.0863641194601 157 243.8863641194601 162" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 84.7 99.9 Q 71.1 118.1 71.4 140.7 Q 85.0 122.6 84.7 99.9 Z" fill="#415237" opacity="0.3346547067901235"/><path d="M 72.5 93.0 Q 57.0 135.2 70.5 178.2 Q 86.0 135.9 72.5 93.0 Z" fill="#415237" opacity="0.34901138117283953"/><path d="M 88.7 116.2 Q 63.5 131.9 53.2 159.7 Q 78.3 144.0 88.7 116.2 Z" fill="#415237" opacity="0.3306712962962963"/><path d="M 89.3 127.1 Q 63.5 151.2 57.8 186.0 Q 83.5 161.9 89.3 127.1 Z" fill="#415237" opacity="0.34699556327160497"/><path d="M 101.1 101.7 Q 86.4 125.6 89.3 153.4 Q 104.0 129.6 101.1 101.7 Z" fill="#415237" opacity="0.40701195987654326"/><path d="M 93.5 98.9 Q 73.8 137.3 81.6 179.7 Q 101.3 141.3 93.5 98.9 Z" fill="#415237" opacity="0.4864149305555556"/><path d="M 90.8 96.1 Q 48.9 125.9 33.9 175.1 Q 75.7 145.2 90.8 96.1 Z" fill="#415237" opacity="0.4775655864197531"/><path d="M 91.5 101.4 Q 57.4 114.1 38.0 145.0 Q 72.2 132.3 91.5 101.4 Z" fill="#415237" opacity="0.2894917052469136"/><path d="M 85.3 109.5 Q 72.5 136.9 79.0 166.3 Q 91.8 139.0 85.3 109.5 Z" fill="#415237" opacity="0.32288773148148153"/><path d="M 92.2 118.0 Q 53.7 134.8 33.5 171.5 Q 71.9 154.7 92.2 118.0 Z" fill="#415237" opacity="0.29511477623456794"/><path d="M 82.9 95.0 Q 46.9 115.2 30.6 153.2 Q 66.7 133.0 82.9 95.0 Z" fill="#415237" opacity="0.4652006172839507"/><path d="M 206.1 81.5 Q 187.3 121.7 196.8 165.0 Q 215.7 124.9 206.1 81.5 Z" fill="#415237" opacity="0.4786014660493827"/><path d="M 225.9 69.1 Q 223.2 98.1 238.8 122.7 Q 241.4 93.7 225.9 69.1 Z" fill="#415237" opacity="0.3505970293209877"/><path d="M 203.3 68.2 Q 220.8 100.9 254.7 116.1 Q 237.1 83.4 203.3 68.2 Z" fill="#415237" opacity="0.4732291666666667"/><path d="M 222.4 80.3 Q 222.9 108.9 240.8 131.2 Q 240.2 102.6 222.4 80.3 Z" fill="#415237" opacity="0.43885898919753086"/><path d="M 198.1 65.5 Q 187.1 103.9 201.8 141.1 Q 212.8 102.7 198.1 65.5 Z" fill="#415237" opacity="0.30651427469135806"/><path d="M 215.8 78.6 Q 201.6 104.1 205.9 133.0 Q 220.1 107.5 215.8 78.6 Z" fill="#415237" opacity="0.4018894675925926"/><path d="M 211.6 69.0 Q 213.0 95.8 230.4 116.1 Q 229.0 89.4 211.6 69.0 Z" fill="#415237" opacity="0.3673456790123457"/><path d="M 216.2 64.9 Q 216.3 88.4 230.6 107.0 Q 230.6 83.5 216.2 64.9 Z" fill="#415237" opacity="0.38691068672839507"/><path d="M 227.2 92.9 Q 238.8 128.1 269.4 148.9 Q 257.8 113.8 227.2 92.9 Z" fill="#415237" opacity="0.31127893518518523"/><path d="M 212.7 86.6 Q 194.4 124.1 202.8 164.9 Q 221.0 127.4 212.7 86.6 Z" fill="#415237" opacity="0.2828115354938272"/><path d="M 58.6 243.1 Q 25.7 261.8 11.0 296.5 Q 43.9 277.9 58.6 243.1 Z" fill="#415237" opacity="0.3911180555555556"/><path d="M 34.7 253.2 Q 4.4 278.8 -4.0 317.7 Q 26.3 292.0 34.7 253.2 Z" fill="#415237" opacity="0.3182052469135803"/><path d="M 52.3 261.3 Q 21.6 264.3 -0.9 285.4 Q 29.8 282.4 52.3 261.3 Z" fill="#415237" opacity="0.3519128086419754"/><path d="M 40.9 238.3 Q -7.1 261.7 -30.8 309.6 Q 17.2 286.1 40.9 238.3 Z" fill="#415237" opacity="0.3327962962962963"/><path d="M 32.6 265.6 Q 0.6 271.0 -21.5 294.7 Q 10.5 289.3 32.6 265.6 Z" fill="#415237" opacity="0.27474459876543217"/><path d="M 46.2 251.4 Q 5.0 238.2 -35.6 252.9 Q 5.6 266.0 46.2 251.4 Z" fill="#415237" opacity="0.264979938271605"/><path d="M 31.1 246.3 Q 5.0 259.8 -7.5 286.3 Q 18.6 272.9 31.1 246.3 Z" fill="#415237" opacity="0.3040578703703704"/><path d="M 51.4 244.0 Q 2.1 250.7 -32.8 286.0 Q 16.4 279.3 51.4 244.0 Z" fill="#415237" opacity="0.2658672839506173"/><path d="M 237.6 299.1 Q 261.8 318.6 292.9 319.2 Q 268.6 299.7 237.6 299.1 Z" fill="#415237" opacity="0.3796195987654321"/><path d="M 240.6 292.3 Q 276.3 325.1 324.5 329.4 Q 288.9 296.6 240.6 292.3 Z" fill="#415237" opacity="0.317354938271605"/><path d="M 233.0 312.8 Q 231.1 338.1 245.0 359.3 Q 246.9 334.0 233.0 312.8 Z" fill="#415237" opacity="0.3939328703703704"/><path d="M 242.9 317.9 Q 242.4 370.3 273.9 412.1 Q 274.4 359.7 242.9 317.9 Z" fill="#415237" opacity="0.3032422839506173"/><path d="M 260.9 283.8 Q 268.8 314.9 294.0 334.8 Q 286.2 303.7 260.9 283.8 Z" fill="#415237" opacity="0.23250540123456795"/><path d="M 256.7 305.3 Q 269.9 334.0 297.9 348.6 Q 284.6 320.0 256.7 305.3 Z" fill="#415237" opacity="0.34227777777777785"/><path d="M 254.1 287.7 Q 263.5 340.2 302.9 376.0 Q 293.6 323.6 254.1 287.7 Z" fill="#415237" opacity="0.36644830246913584"/><path d="M 252.2 311.3 Q 264.5 358.8 303.3 389.0 Q 291.0 341.4 252.2 311.3 Z" fill="#415237" opacity="0.2322391975308642"/><path d="M 144.5 487.3 Q 151.4 538.9 188.2 575.7 Q 181.4 524.1 144.5 487.3 Z" fill="#415237" opacity="0.23594675925925926"/><path d="M 139.8 485.4 Q 137.0 535.6 165.4 577.1 Q 168.2 526.9 139.8 485.4 Z" fill="#415237" opacity="0.18921354166666668"/><path d="M 141.9 473.4 Q 133.0 493.9 138.4 515.5 Q 147.3 495.0 141.9 473.4 Z" fill="#415237" opacity="0.2770289351851852"/><path d="M 161.5 471.5 Q 146.4 492.3 147.1 518.1 Q 162.2 497.2 161.5 471.5 Z" fill="#415237" opacity="0.21980960648148148"/><path d="M 164.1 486.5 Q 150.6 523.6 162.5 561.3 Q 176.0 524.2 164.1 486.5 Z" fill="#415237" opacity="0.16797222222222222"/><path d="M 145.8 455.8 Q 97.7 475.6 71.6 520.6 Q 119.7 500.8 145.8 455.8 Z" fill="#415237" opacity="0.26693344907407407"/><path d="M 161.4 467.6 Q 166.9 510.6 197.6 541.3 Q 192.0 498.3 161.4 467.6 Z" fill="#415237" opacity="0.17710995370370372"/></g>
+</svg></div>
+<div class="grove grove-r" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 1000" width="460" height="1000" preserveAspectRatio="xMinYMax slice">
+<defs>
+  <filter id="soft" x="-30%" y="-10%" width="160%" height="130%"><feGaussianBlur stdDeviation="1.4"/></filter>
+  <filter id="softer" x="-30%" y="-10%" width="160%" height="130%"><feGaussianBlur stdDeviation="3.4"/></filter>
+</defs>
+<g filter="url(#softer)"><path d="M 40 1040 Q 66 550 50.4 60" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 34.94748021657643 1002 Q 41.24748021657643 997 47.547480216576425 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 39.11120533111204 854 Q 45.411205331112036 849 51.71120533111203 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 42.56334693877551 706 Q 48.86334693877551 701 55.163346938775504 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 45.30390503956685 558 Q 51.60390503956685 553 57.903905039566844 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 47.33287963348605 410 Q 53.63287963348605 405 59.932879633486046 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 48.650270720533115 262 Q 54.95027072053311 257 61.25027072053311 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 49.25607830070804 114 Q 55.55607830070804 109 61.856078300708035 114" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 150 1040 Q 170 565 158 90" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 144.68925207756232 1002 Q 150.98925207756233 997 157.28925207756234 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 147.97952576177283 854 Q 154.27952576177285 849 160.57952576177286 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 150.6873108033241 706 Q 156.9873108033241 701 163.28731080332412 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 152.81260720221604 558 Q 159.11260720221605 553 165.41260720221607 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 154.35541495844873 410 Q 160.65541495844874 405 166.95541495844876 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 155.31573407202214 262 Q 161.61573407202215 257 167.91573407202216 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 300 1040 Q 314 580 305.6 120" fill="none" stroke="#33422e" stroke-width="7" stroke-linecap="round" opacity="0.34"/><path d="M 294.4145557655954 1002 Q 300.71455576559543 997 307.01455576559545 1002" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 296.78227599243854 854 Q 303.08227599243855 849 309.38227599243857 854" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 298.71522873345936 706 Q 305.01522873345937 701 311.3152287334594 706" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 300.2134139886578 558 Q 306.5134139886578 553 312.8134139886578 558" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 301.276831758034 410 Q 307.576831758034 405 313.87683175803403 410" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/><path d="M 301.9054820415879 262 Q 308.2054820415879 257 314.5054820415879 262" fill="none" stroke="#33422e" stroke-width="1.9600000000000002" stroke-linecap="round" opacity="0.30600000000000005"/></g>
+<g filter="url(#soft)"><path d="M 95 1040 Q 125 535 107 30" fill="none" stroke="#46583c" stroke-width="12" stroke-linecap="round" opacity="0.5"/><path d="M 85.59751004803451 1002 Q 96.3975100480345 997 107.1975100480345 1002" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 90.85045387707088 834 Q 101.65045387707087 829 112.45045387707087 834" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 95.10735418096264 666 Q 105.90735418096264 661 116.70735418096264 666" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 98.36821095970984 498 Q 109.16821095970984 493 119.96821095970984 498" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 100.63302421331242 330 Q 111.43302421331242 325 122.23302421331242 330" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 101.90179394177042 162 Q 112.70179394177042 157 123.50179394177042 162" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 220 1040 Q 242 555 228.8 70" fill="none" stroke="#46583c" stroke-width="12" stroke-linecap="round" opacity="0.5"/><path d="M 210.26621320012754 1002 Q 221.06621320012755 997 231.86621320012756 1002" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 214.2540750345414 834 Q 225.0540750345414 829 235.8540750345414 834" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 217.45002104368157 666 Q 228.25002104368158 661 239.0500210436816 666" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 219.85405122754807 498 Q 230.65405122754808 493 241.4540512275481 498" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 221.4661655861409 330 Q 232.26616558614091 325 243.06616558614093 330" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 222.28636411946007 162 Q 233.0863641194601 157 243.8863641194601 162" fill="none" stroke="#46583c" stroke-width="3.3600000000000003" stroke-linecap="round" opacity="0.45"/><path d="M 84.7 99.9 Q 71.1 118.1 71.4 140.7 Q 85.0 122.6 84.7 99.9 Z" fill="#415237" opacity="0.3346547067901235"/><path d="M 72.5 93.0 Q 57.0 135.2 70.5 178.2 Q 86.0 135.9 72.5 93.0 Z" fill="#415237" opacity="0.34901138117283953"/><path d="M 88.7 116.2 Q 63.5 131.9 53.2 159.7 Q 78.3 144.0 88.7 116.2 Z" fill="#415237" opacity="0.3306712962962963"/><path d="M 89.3 127.1 Q 63.5 151.2 57.8 186.0 Q 83.5 161.9 89.3 127.1 Z" fill="#415237" opacity="0.34699556327160497"/><path d="M 101.1 101.7 Q 86.4 125.6 89.3 153.4 Q 104.0 129.6 101.1 101.7 Z" fill="#415237" opacity="0.40701195987654326"/><path d="M 93.5 98.9 Q 73.8 137.3 81.6 179.7 Q 101.3 141.3 93.5 98.9 Z" fill="#415237" opacity="0.4864149305555556"/><path d="M 90.8 96.1 Q 48.9 125.9 33.9 175.1 Q 75.7 145.2 90.8 96.1 Z" fill="#415237" opacity="0.4775655864197531"/><path d="M 91.5 101.4 Q 57.4 114.1 38.0 145.0 Q 72.2 132.3 91.5 101.4 Z" fill="#415237" opacity="0.2894917052469136"/><path d="M 85.3 109.5 Q 72.5 136.9 79.0 166.3 Q 91.8 139.0 85.3 109.5 Z" fill="#415237" opacity="0.32288773148148153"/><path d="M 92.2 118.0 Q 53.7 134.8 33.5 171.5 Q 71.9 154.7 92.2 118.0 Z" fill="#415237" opacity="0.29511477623456794"/><path d="M 82.9 95.0 Q 46.9 115.2 30.6 153.2 Q 66.7 133.0 82.9 95.0 Z" fill="#415237" opacity="0.4652006172839507"/><path d="M 206.1 81.5 Q 187.3 121.7 196.8 165.0 Q 215.7 124.9 206.1 81.5 Z" fill="#415237" opacity="0.4786014660493827"/><path d="M 225.9 69.1 Q 223.2 98.1 238.8 122.7 Q 241.4 93.7 225.9 69.1 Z" fill="#415237" opacity="0.3505970293209877"/><path d="M 203.3 68.2 Q 220.8 100.9 254.7 116.1 Q 237.1 83.4 203.3 68.2 Z" fill="#415237" opacity="0.4732291666666667"/><path d="M 222.4 80.3 Q 222.9 108.9 240.8 131.2 Q 240.2 102.6 222.4 80.3 Z" fill="#415237" opacity="0.43885898919753086"/><path d="M 198.1 65.5 Q 187.1 103.9 201.8 141.1 Q 212.8 102.7 198.1 65.5 Z" fill="#415237" opacity="0.30651427469135806"/><path d="M 215.8 78.6 Q 201.6 104.1 205.9 133.0 Q 220.1 107.5 215.8 78.6 Z" fill="#415237" opacity="0.4018894675925926"/><path d="M 211.6 69.0 Q 213.0 95.8 230.4 116.1 Q 229.0 89.4 211.6 69.0 Z" fill="#415237" opacity="0.3673456790123457"/><path d="M 216.2 64.9 Q 216.3 88.4 230.6 107.0 Q 230.6 83.5 216.2 64.9 Z" fill="#415237" opacity="0.38691068672839507"/><path d="M 227.2 92.9 Q 238.8 128.1 269.4 148.9 Q 257.8 113.8 227.2 92.9 Z" fill="#415237" opacity="0.31127893518518523"/><path d="M 212.7 86.6 Q 194.4 124.1 202.8 164.9 Q 221.0 127.4 212.7 86.6 Z" fill="#415237" opacity="0.2828115354938272"/><path d="M 58.6 243.1 Q 25.7 261.8 11.0 296.5 Q 43.9 277.9 58.6 243.1 Z" fill="#415237" opacity="0.3911180555555556"/><path d="M 34.7 253.2 Q 4.4 278.8 -4.0 317.7 Q 26.3 292.0 34.7 253.2 Z" fill="#415237" opacity="0.3182052469135803"/><path d="M 52.3 261.3 Q 21.6 264.3 -0.9 285.4 Q 29.8 282.4 52.3 261.3 Z" fill="#415237" opacity="0.3519128086419754"/><path d="M 40.9 238.3 Q -7.1 261.7 -30.8 309.6 Q 17.2 286.1 40.9 238.3 Z" fill="#415237" opacity="0.3327962962962963"/><path d="M 32.6 265.6 Q 0.6 271.0 -21.5 294.7 Q 10.5 289.3 32.6 265.6 Z" fill="#415237" opacity="0.27474459876543217"/><path d="M 46.2 251.4 Q 5.0 238.2 -35.6 252.9 Q 5.6 266.0 46.2 251.4 Z" fill="#415237" opacity="0.264979938271605"/><path d="M 31.1 246.3 Q 5.0 259.8 -7.5 286.3 Q 18.6 272.9 31.1 246.3 Z" fill="#415237" opacity="0.3040578703703704"/><path d="M 51.4 244.0 Q 2.1 250.7 -32.8 286.0 Q 16.4 279.3 51.4 244.0 Z" fill="#415237" opacity="0.2658672839506173"/><path d="M 237.6 299.1 Q 261.8 318.6 292.9 319.2 Q 268.6 299.7 237.6 299.1 Z" fill="#415237" opacity="0.3796195987654321"/><path d="M 240.6 292.3 Q 276.3 325.1 324.5 329.4 Q 288.9 296.6 240.6 292.3 Z" fill="#415237" opacity="0.317354938271605"/><path d="M 233.0 312.8 Q 231.1 338.1 245.0 359.3 Q 246.9 334.0 233.0 312.8 Z" fill="#415237" opacity="0.3939328703703704"/><path d="M 242.9 317.9 Q 242.4 370.3 273.9 412.1 Q 274.4 359.7 242.9 317.9 Z" fill="#415237" opacity="0.3032422839506173"/><path d="M 260.9 283.8 Q 268.8 314.9 294.0 334.8 Q 286.2 303.7 260.9 283.8 Z" fill="#415237" opacity="0.23250540123456795"/><path d="M 256.7 305.3 Q 269.9 334.0 297.9 348.6 Q 284.6 320.0 256.7 305.3 Z" fill="#415237" opacity="0.34227777777777785"/><path d="M 254.1 287.7 Q 263.5 340.2 302.9 376.0 Q 293.6 323.6 254.1 287.7 Z" fill="#415237" opacity="0.36644830246913584"/><path d="M 252.2 311.3 Q 264.5 358.8 303.3 389.0 Q 291.0 341.4 252.2 311.3 Z" fill="#415237" opacity="0.2322391975308642"/><path d="M 144.5 487.3 Q 151.4 538.9 188.2 575.7 Q 181.4 524.1 144.5 487.3 Z" fill="#415237" opacity="0.23594675925925926"/><path d="M 139.8 485.4 Q 137.0 535.6 165.4 577.1 Q 168.2 526.9 139.8 485.4 Z" fill="#415237" opacity="0.18921354166666668"/><path d="M 141.9 473.4 Q 133.0 493.9 138.4 515.5 Q 147.3 495.0 141.9 473.4 Z" fill="#415237" opacity="0.2770289351851852"/><path d="M 161.5 471.5 Q 146.4 492.3 147.1 518.1 Q 162.2 497.2 161.5 471.5 Z" fill="#415237" opacity="0.21980960648148148"/><path d="M 164.1 486.5 Q 150.6 523.6 162.5 561.3 Q 176.0 524.2 164.1 486.5 Z" fill="#415237" opacity="0.16797222222222222"/><path d="M 145.8 455.8 Q 97.7 475.6 71.6 520.6 Q 119.7 500.8 145.8 455.8 Z" fill="#415237" opacity="0.26693344907407407"/><path d="M 161.4 467.6 Q 166.9 510.6 197.6 541.3 Q 192.0 498.3 161.4 467.6 Z" fill="#415237" opacity="0.17710995370370372"/></g>
+</svg></div>
+<div id="introOverlay">
+  <div class="introcard">
+    <div class="kicker">Kebiishi Archive — 山城国 変死事件 · 照会のはじめに</div>
+    <p class="story">
+      平安の世、山城の国。都を東へ外れた山科（やましな）の街道から、竹に杉のまじる藪へわずかに分け入ったところで、ひとりの男の骸（むくろ）が見つかった。胸を、ただひと突き。あたりの竹の落葉は、血に黒く染みていた。<span class="em">が、その胸を貫いたはずの刀は、どこにも無い。</span>
+    </p>
+    <p class="story">
+      骸は、若狭の侍・金沢の武弘。連れ添っていた妻の真砂（まさご）は、行方が知れぬ。
+    </p>
+    <p class="story">
+      検非違使<span class="gloss">（けびいし＝都の警察と裁判をつかさどる役人）</span>のあなたの務めは、事件の関係者を一人ずつ呼び、尋問すること。語られた言葉を書き留め、そこに現れた名や物を、次の照会の手がかりとせよ。<span class="em">ただし、誰もが真実を語るとは限らない。</span>
+    </p>
+    <p class="ask">——はたして、あの藪の中で、何があったのか。</p>
+    <div class="enter"><button id="introEnter">尋問を始める</button></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">
+      <span>Kebiishi Archive · 検非違使庁記録</span>
+      <span class="progress" id="progress">断片 0 / 27</span>
+    </div>
+    <div class="titlerow">
+      <h1>藪の中<span class="lamp">。</span></h1>
+      <span class="case">照会案件：山科の藪 変死事件 — 金沢武弘（二十六）死亡・妻 真砂（十九）行方不明</span>
+    </div>
+
+    <div class="query">
+      <span class="prompt">&gt;_</span>
+      <input id="q" type="text" value="死体" placeholder="言葉で調書を検索" autocomplete="off" spellcheck="false" />
+      <button id="go">照会</button>
+      <button id="histBtn" class="util" title="検索履歴">履歴</button>
+      <button id="cfgBtn" class="util" title="設定">設定</button>
+    </div>
+
+    <div class="panel hidden" id="historyPanel">
+      <div class="pttl">検索履歴</div>
+      <div id="histList"><div class="histempty">まだ照会の履歴はありません。</div></div>
+    </div>
+
+    <div class="panel hidden" id="settingsPanel">
+      <div class="pttl">設定</div>
+      <button class="cmd" id="cmdClear">検索履歴を消去する</button>
+      <div class="confirm hidden" id="clearConfirm">
+        照会の履歴をすべて消去しますか？　照会簿は白紙に戻り、すべての調書が未発見になります。
+        <div>
+          <button id="clearYes">はい</button>
+          <button id="clearNo">いいえ</button>
+        </div>
+      </div>
+      <button class="cmd" id="cmdQuit">ゲームを終了する</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside class="map">
+      <div class="caphead">山城国 絵図 · 場所で絞り込み</div>
+      <svg viewBox="0 0 300 240" role="img" aria-label="山城国の絵図">
+        <!-- ground -->
+        <rect x="0" y="0" width="300" height="240" fill="#0a100b"/>
+        <!-- capital (Kyoto) -->
+        <path d="M18 44 L96 44 L96 214 L18 214 Z" fill="#161f16" stroke="#2c3d28" stroke-width="1.2"/>
+        <path d="M30 44 L30 214 M44 44 L44 214 M58 44 L58 214 M72 44 L72 214 M86 44 L86 214" stroke="#1c2a1d" stroke-width=".7"/>
+        <path d="M18 70 L96 70 M18 118 L96 118 M18 166 L96 166" stroke="#1c2a1d" stroke-width=".7"/>
+        <text class="maplabel" x="26" y="36">みやこ</text>
+        <!-- eastern hills -->
+        <path d="M118 128 L136 92 L154 128 Z" fill="#131d14" stroke="#2c3d28" stroke-width="1"/>
+        <path d="M146 132 L168 84 L192 132 Z" fill="#131d14" stroke="#2c3d28" stroke-width="1"/>
+        <path d="M182 128 L200 98 L218 128 Z" fill="#131d14" stroke="#2c3d28" stroke-width="1"/>
+        <text class="maplabel" x="146" y="146">ひがしやま</text>
+        <!-- highway to Yamashina -->
+        <path d="M96 100 C 130 100, 150 118, 178 122 C 210 126, 240 112, 284 108" fill="none" stroke="#3a4630" stroke-width="1.4" stroke-dasharray="4 5"/>
+        <!-- spur into the grove -->
+        <path d="M236 114 C 240 96, 244 84, 250 70" fill="none" stroke="#3a4630" stroke-width="1" stroke-dasharray="2 4"/>
+        <!-- bamboo grove marks -->
+        <path d="M244 56 l0 -10 M252 60 l0 -12 M260 54 l0 -10 M247 44 l4 -6 M256 46 l4 -6" stroke="#37542f" stroke-width="1.2" fill="none"/>
+
+        <!-- kebiishi office node -->
+        <g class="node" data-loc="検非違使庁" tabindex="0">
+          <rect x="48" y="76" width="10" height="8" fill="#2c4228"/>
+          <circle class="dot" cx="53" cy="72" r="5" fill="#4b6a44"/>
+          <text x="20" y="98">検非違使庁</text>
+        </g>
+        <!-- kiyomizu node -->
+        <g class="node" data-loc="清水寺" tabindex="0">
+          <path d="M66 148 l7 -6 l7 6 z" fill="#33502e"/>
+          <circle class="dot" cx="73" cy="152" r="4.5" fill="#4b6a44"/>
+          <text x="58" y="170">清水寺</text>
+        </g>
+        <!-- toribedera node -->
+        <g class="node" data-loc="鳥部寺" tabindex="0">
+          <path d="M60 196 l7 -6 l7 6 z" fill="#33502e"/>
+          <circle class="dot" cx="67" cy="200" r="4.5" fill="#4b6a44"/>
+          <text x="52" y="222">鳥部寺</text>
+        </g>
+        <!-- awataguchi node -->
+        <g class="node" data-loc="粟田口" tabindex="0">
+          <rect x="112" y="98" width="14" height="3.5" fill="#33502e"/>
+          <circle class="dot" cx="119" cy="100" r="4.5" fill="#4b6a44"/>
+          <text x="100" y="90">粟田口</text>
+        </g>
+        <!-- highway node -->
+        <g class="node" data-loc="山科の街道" tabindex="0">
+          <circle class="dot" cx="216" cy="122" r="5" fill="#4b6a44"/>
+          <text x="192" y="142">山科の街道</text>
+        </g>
+        <!-- grove node -->
+        <g class="node" data-loc="藪の中" tabindex="0">
+          <circle class="dot" cx="252" cy="62" r="5" fill="#4b6a44"/>
+          <text x="228" y="34">藪の中</text>
+        </g>
+      </svg>
+      <div class="mapnote">絵図は、すでに照会簿に上がった調書を場所ごとに読み返すためのものです。</div>
+    </aside>
+
+    <main class="results" id="results">
+      <div class="rcount" id="rcount">調書：待機中</div>
+      <div class="empty-state" id="init">
+        検索欄の言葉を、まず照会してみてください。<br/>
+        調書に出てくる名前・物・出来事が、次の照会の手がかりになります。
+      </div>
+      <div id="list"></div>
+      <div id="epilogue" class="hidden">
+        <div class="lab">所見</div>
+        <p>三つの告白が出そろった。太刀で貫いたと語る盗人。短刀で刺したと語る妻。自ら胸を突いたと語る死霊。――誰かが嘘をついているのか、誰もが嘘をついているのか。胸の短刀を抜いた「見えない手」は、誰のものだったのか。<br/>真実は、藪の中。</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+/*
+ * 検索は「タグ一致」＋「発見済み断片の本文一致」の合成（v8）。
+ *   - タグ一致：未発見の断片を新規に開くための唯一の経路（グラフの辺）。
+ *   - 本文一致：すでに照会簿に上がった断片は、本文にその語（2文字以上）が
+ *     含まれていれば再表示される。→「叫び」で j6 だけでなく既読の j5 も並ぶ。
+ *   未発見の断片が本文一致で漏れることはないので、ゲート構造は崩れない。
+ * これによりキーワードグラフを完全に制御する：
+ *   断片Aの本文に書かれた語が、断片Bのタグに含まれるとき、A→Bの辺が張られる。
+ * 階層： 木こり(入口) → 僧・放免・媼(周辺) → 多襄丸の白状(鎖) → 女の懺悔(鎖) → 死霊の物語(鎖)
+ * 白状以降は一本鎖で、直前の断片の本文にだけ次のゲート語が現れる。
+ * 例外(v7)：「短刀」は意図した近道。j5で初めて目にする語で、m4(死にきれない)と
+ * s5★(見えない手)に直接届く。鎖を律義に辿る前に結末だけ先に覗ける設計。
+ */
+const FRAGMENTS = [
+  /* ---- 木こりの証言（入口層） ---- */
+  { id:"k1", src:"木こりの証言", idlab:"WIT-001·a", loc:"藪の中",
+    text:"はい、あの死体を見つけたのは、確かにわたしです。今朝、いつものように裏山へ杉を切りに出かけたところ、山かげの藪の中に、あの死体があったのです。山科の街道からは、四、五百メートルほど離れた、竹に細い杉のまじった人気のない場所です。",
+    tags:["死体","木こり","藪","藪の中","山科","街道","杉","竹"] },
+  { id:"k2", src:"木こりの証言", idlab:"WIT-001·b", loc:"藪の中",
+    text:"死体は水色の狩衣を着て、都ふうの烏帽子をかぶったまま、あおむけに倒れていました。ひと突きの胸の刺し傷で、まわりの竹の落ち葉は赤黒く染みたようになっていました。いえ、血はもう流れておらず、傷口も乾いていたようです。",
+    tags:["死体","木こり","藪","藪の中","狩衣","烏帽子","傷","胸","血"] },
+  { id:"k3", src:"木こりの証言", idlab:"WIT-001·c", loc:"藪の中",
+    text:"太刀のようなものは何もありません。ただ、そばの杉の根もとに縄が一本、それから櫛がひとつ落ちていました。あたりの草や竹の落ち葉は一面に踏み荒らされていましたから、よほど激しく争ったに違いありません。馬ですか？　あそこは馬など入れない場所です。馬の通う街道とは、藪ひとつ隔たっていますから。",
+    tags:["木こり","藪","藪の中","縄","櫛","馬","太刀"] },
+
+  /* ---- 旅の僧の証言（周辺層） ---- */
+  { id:"t1", src:"旅の僧の証言", idlab:"WIT-002·a", loc:"山科の街道",
+    text:"あの亡くなった男なら、昨日の昼ごろ、関山から山科へ向かう街道の途中で行き会いました。夫婦者らしく、男は馬に乗った女を連れておりました。女は被り物の布を深く垂れていて、見えたのは萩の花のような色合いの着物だけです。馬は月毛の、たてがみを短く切りそろえた馬でした。",
+    tags:["僧","旅の僧","山科","街道","関山","夫婦","女","馬","月毛","着物"] },
+  { id:"t2", src:"旅の僧の証言", idlab:"WIT-002·b", loc:"山科の街道",
+    text:"男は太刀を差し、弓矢も持っていました。ことに黒塗りの矢筒に、二十本あまりの矢を差していたのは、今でもはっきり覚えています。あの男がこんなことになろうとは。人の命とは、まことに露や稲妻のようにはかないものです。",
+    tags:["僧","旅の僧","太刀","弓矢","矢","矢筒"] },
+
+  /* ---- 放免の証言（周辺層） ---- */
+  { id:"h1", src:"放免の証言", idlab:"REC-001·a", loc:"粟田口",
+    text:"わたしが捕まえた男は、確かに多襄丸という名の知れた盗人です。馬から振り落とされたのでしょう、昨夜、粟田口の石橋の上で、うんうんうなっておりました。以前捕まえそこねたときと同じ、紺の狩衣を着て、飾り金具のついた太刀を差しておりました。",
+    tags:["放免","多襄丸","盗人","粟田口","石橋","太刀","狩衣"] },
+  { id:"h2", src:"放免の証言", idlab:"REC-001·b", loc:"粟田口",
+    text:"そのとき多襄丸が持っていたのは、革を巻いた弓、黒塗りの矢筒、鷹の羽の矢が十七本――どれも自前の物とは思えません。あの死んだ男の持ち物だったのでしょう。馬も、たてがみを切った月毛です。石橋の少し先で、長い手綱を引きずったまま、道ばたの青いすすきを食べておりました。",
+    tags:["放免","多襄丸","弓矢","矢","矢筒","月毛","馬","持ち物","石橋"] },
+  { id:"h3", src:"放免の証言", idlab:"REC-001·c", loc:"鳥部寺",
+    text:"この多襄丸というやつは、都をうろつく盗人の中でも、女好きで知られたやつです。去年の秋、鳥部寺の裏山で、参詣に来たらしい女がひとり、召使いの少女ともども殺されていたのも、こいつの仕業だといううわさでした。月毛に乗っていたという女も、どこでどうなったか。あわせてお調べくださいまし。",
+    tags:["放免","多襄丸","盗人","鳥部寺","うわさ","女好き"] },
+
+  /* ---- 媼の証言（周辺層） ---- */
+  { id:"o1", src:"媼の証言", idlab:"WIT-003·a", loc:"検非違使庁",
+    text:"あの死体は、手前どもの娘が嫁いだ男でございます。都の者ではなく、若狭の国府に勤める侍で、名は金沢の武弘、年は二十六歳。優しい気立ての人でしたから、人に恨まれるはずはございません。",
+    tags:["媼","夫婦","婿","武弘","若狭","侍","金沢"] },
+  { id:"o2", src:"媼の証言", idlab:"WIT-003·b", loc:"検非違使庁",
+    text:"娘の名は真砂、年は十九です。男にも負けないくらい勝ち気な娘ですが、武弘のほかに男を持ったことは一度もありません。色は浅黒く、左の目じりにほくろのある、小柄な細おもてでございます。",
+    tags:["媼","女","娘","真砂","ほくろ","勝ち気","妻"] },
+  { id:"o3", src:"媼の証言", idlab:"WIT-003·c", loc:"検非違使庁",
+    text:"武弘は昨日、娘と一緒に若狭へ発ったのでございます。婿はあきらめるとしても、娘の行方だけが心配でなりません。草の根を分けてでも探してくださいまし。何より憎いのは、その多襄丸とかいう盗人でございます。婿ばかりか、娘までも………",
+    tags:["媼","娘","行方","真砂","盗人","多襄丸"] },
+
+  /* ---- 多襄丸の白状（一本鎖：多襄丸→顔→欲→木立→急病→叫び→消え） ---- */
+  { id:"j1", src:"盗人の白状", idlab:"CNF-001·a", loc:"検非違使庁",
+    text:"あの男を殺したのはわたしです。しかし、女は殺していません。ではどこへ行ったのか？　それはわたしにもわからないのです。……卑怯な隠し立てはしません。すべては、風の吹いた拍子に、あの女の顔がちらりと見えたときに始まったのです。",
+    tags:["盗人","白状"] },   // v10: 「多襄丸」では開かない。多襄丸→(証言で「盗人」と知る)→盗人→白状 の二段リンク
+  { id:"j2", src:"盗人の白状", idlab:"CNF-001·b", loc:"山科の街道",
+    text:"ちらりと――見えたと思った瞬間には、もう見えなくなっていました。だからこそ、でしょう。わたしにはあの女の顔が、菩薩のように見えたのです。その一瞬のうちに、たとえ男は殺しても、女は奪おうと決心しました。あとは、あの男の欲につけこむだけです。",
+    tags:["顔","女の顔","菩薩"] },
+  { id:"j3", src:"盗人の白状", idlab:"CNF-001·c", loc:"山科の街道",
+    text:"古塚から鏡や太刀がどっさり出た、藪の中の杉の木立に埋めてある、安く譲ってもいい――わたしがそう持ちかけると、男の目の色が変わりました。欲というものは恐ろしいでしょう。一時間もたたないうちに、あの夫婦は山道へ馬を向けていたのです。",
+    tags:["欲","古塚"] },
+  { id:"j4", src:"盗人の白状", idlab:"CNF-001·d", loc:"藪の中",
+    text:"女ひとりを馬に残し、男と藪へ入りました。山道から離れた杉の木立へ出るやいなや、いきなり組み伏せ、杉の根もとへ縛りつけたのです。縄は盗人のありがたさで、腰に備えがあります。声を出させないためには、竹の落ち葉を口いっぱいにほおばらせれば済みます。それから女のところへ戻り、連れの男が急病だ、と告げたのです。",
+    tags:["木立","山道"] },
+  { id:"j5", src:"盗人の白状", idlab:"CNF-001·e", loc:"藪の中",
+    text:"急病と聞いて、女は笠を脱いだまま、わたしに手を引かれて藪の奥へ入って来ました。縛られた夫をひと目見るなり、女は懐から短刀を引き抜きました。あれほど気性の激しい女は見たことがありません。それでもどうにか短刀をたたき落とし、とうとう思いどおり、男の命は取らずに女をわがものにしました。……ところが藪を出ようとしたとき、女がわたしの腕にすがりつき、思いもよらぬ叫びを上げたのです。",
+    tags:["急病"] },
+  { id:"j6", src:"盗人の白状", idlab:"CNF-001·f", loc:"藪の中", key:true,
+    text:"あなたが死ぬか、夫が死ぬか、どちらかひとり死んでくれ――ふたりの男に恥を見せるのは死ぬよりつらい、生き残った方につれ添いたい、と女は切れ切れに叫びました。……わたしは男の縄を解き、太刀で勝負しろと言いました。杉の根もとの縄は、そのとき捨て忘れたものです。わたしの太刀は二十三合目に、相手の胸を貫きました。二十合斬り合った者は、天下にあの男ひとりです。……ですが、本当にお話ししたいのは、そのあとのことです。倒れた男から目を上げると、女の足跡が、どこにも見当たらないのです。",
+    tags:["叫び","叫ん"] },
+  { id:"j7", src:"盗人の白状", idlab:"CNF-001·g", loc:"藪の中",
+    text:"男が倒れて振り返ると、女の姿はどこにも見えません。竹の落ち葉に足跡ひとつ残さず、消えたのです。手ごめにした女がその後どうなったかなど、わたしの知ったことではありません。わたしは太刀と弓矢を奪って山道へ出ました。都へ入る前に、太刀は手放しましたがね。どうせ一度はさらし首になる身、どうか極刑にしてください。",
+    tags:["足跡","消え"] },
+
+  /* ---- 女の懺悔（一本鎖：手ごめ→蔑み→覚悟→死にきれ） ---- */
+  { id:"m1", src:"女の懺悔（清水寺）", idlab:"CNF-002·a", loc:"藪の中",
+    text:"――その紺の狩衣を着た男は、わたしを手ごめにしたあと、縛られた夫を眺めて、あざけるように笑いました。駆け寄ろうとしたわたしは、蹴倒されました。そのとき、夫の目に宿っていたものを、わたしは見てしまったのです。怒りでも、悲しみでもない――わたしを蔑んだ、”冷たい”光でした。わたしはその目に打たれたように、気を失ってしまいました。",
+    tags:["手ごめ"] },
+  { id:"m2", src:"女の懺悔（清水寺）", idlab:"CNF-002·b", loc:"藪の中",
+    text:"気がつくと男は去っていて、夫の目は、やはり冷たい蔑みの底に憎しみを見せていました。「あなた。もうこうなったからには、ご一緒にはいられません。わたしはひと思いに死ぬ覚悟です。しかし――あなたも死んでくださいまし」。わたしは一生懸命に、それだけを言いました。",
+    tags:["夫の目","冷たい","蔑み","蔑ん"] },
+  { id:"m3", src:"女の懺悔（清水寺）", idlab:"CNF-002·c", loc:"藪の中", key:true,
+    text:"太刀も弓矢も見当たらず、ただ短刀だけが足もとに落ちていました。夫はわたしを蔑んだまま、「殺せ」とひとこと。口には笹の落ち葉が詰まって、声は聞こえません。けれど、わたしにはわかったのです。わたしは覚悟のとおり、夢うつつのうちに、夫の胸へずぶりと短刀を突き通しました。……けれど、大慈大悲の観音さまも、わたしをお見放しになったのでしょう。わたしだけは、死にきれなかったのです。",
+    tags:["覚悟"] },
+  { id:"m4", src:"女の懺悔（清水寺）", idlab:"CNF-002·d", loc:"清水寺",
+    text:"泣きながら、死体の縄を解いて捨てたことは覚えています。清水寺の観音さまの元に籠ってからも、短刀を喉に突き立てようとしては力尽き、池にも身を投げました。それでも死にきれず、こうして生き恥をさらしております。夫を殺したわたしは、どうすればいいのでしょう。……あの人の魂は、いまもあの藪にいるのでしょうか。巫女の口寄せなら、あの人の声が聞けるのでしょうか。わたしは――わたしは――",
+    tags:["観音","死にきれ","短刀"] },
+
+  /* ---- 死霊の物語（一本鎖：魂→返事→罪→ためら→静けさ） ---- */
+  { id:"s1", src:"死霊の物語（巫女の口寄せ）", idlab:"CNF-003·a", loc:"藪の中",
+    text:"――盗人は妻を手ごめにすると、腰を下ろしたまま、あれこれと妻を慰めはじめた。体を汚された以上、夫との仲はもう戻るまい。あんな夫より、おれの妻になれ、と。おれは口もきけず、杉の根に縛られたまま、何度も妻へ目くばせをした。真に受けるな、何を言われても嘘と思え、と。だが妻は、うっとりと顔を上げ――そして、返事をしたのだ。",
+    tags:["巫女","口寄せ","死霊"] },
+  { id:"s2", src:"死霊の物語（巫女の口寄せ）", idlab:"CNF-003·b", loc:"藪の中",
+    text:"おれはあのときほど美しい妻を見たことがない。だがその美しい妻は、縛られたおれを目の前にして、確かにこう返事をした――「では、どこへでも連れて行ってください」。……妻の罪は、それだけではないのだ。",
+    tags:["返事"] },
+  { id:"s3", src:"死霊の物語（巫女の口寄せ）", idlab:"CNF-003·c", loc:"藪の中",
+    text:"妻は盗人に手を取られて藪を出ようとして、急に顔色を変え、杉の根のおれを指さして叫んだ。「あの人を殺してください。あの人が生きていては、あなたと一緒にはいられません」。盗人でさえ、その言葉には色を失った。盗人は妻を蹴倒すと、おれに目をやり、静かに聞いた。「あの女は殺すか、それとも助けてやるか」。……この言葉だけでも、おれは盗人の罪を許してやりたい。おれがためらううちに、妻はひと声叫んで藪の奥へ走り、盗人も捕まえそこねた。あとに残ったのは、縛られたおれと――どこからか聞こえる、低い泣き声だけだった。",
+    tags:["罪"] },
+  { id:"s4", src:"死霊の物語（巫女の口寄せ）", idlab:"CNF-003·d", loc:"藪の中",
+    text:"盗人は妻が逃げ去ったあと、太刀と弓矢を取り上げ、一か所だけおれの縄を切って、姿を消した。あたりは静かになった。いや――まだ、誰かの泣く声がする。縄を解きながら耳を澄ませば、それは、おれ自身の泣き声だったではないか。やがて声も涸れ、あとには深い静けさだけが残った。",
+    tags:["泣き声","ためら"] },
+  { id:"s5", src:"死霊の物語（巫女の口寄せ）", idlab:"CNF-003·e", loc:"藪の中", key:true,
+    text:"おれの前には、妻が落とした短刀が光っていた。おれはそれを手に取り、ひと突きに胸へ刺した。……深い静けさの中で、誰かが忍び足におれのそばへ来た。その誰かは、見えない手で、そっと胸の短刀を抜いたのだ。口の中に、もう一度血があふれた。おれはそれきり永久に、この世とあの世の間の闇へ沈んだ。",
+    tags:["静けさ","見えない手","短刀"] }
+];
+
+/* 語り手のかっこ書き注釈（調書カードの見出しに表示） */
+const SRC_NOTES = {
+  "放免の証言": "放免：盗人を捕縛した者",
+  "媼の証言":   "媼（おうな）：真砂の母"
+};
+
+/* 打ちにくい語にコピーボタンを付ける（スマホ対策）。本文中の出現箇所に付く */
+const COPY_TERMS = ["多襄丸"];
+
+const state = { discovered:new Set(), history:[] };  // history: [{term, hits}] 新しい順
+
+/* ---- セーブ機能（v12） ----
+ * 進行状態（発見済み断片・検索履歴）を端末に保存する。現在は localStorage。
+ * Capacitor等でネイティブ保存（Preferencesプラグイン）に替える場合は、
+ * 下の saveState / loadState / clearSaved の3関数の中身だけ差し替えればよい。
+ * 保存できない環境（プライベートモード等）でもゲーム自体は動く。 */
+const SAVE_KEY = "yabu_no_naka_save";
+const SAVE_VERSION = 1;   // 断片・タグを改訂したら上げる（旧セーブは無効になる）
+
+function saveState(){
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v: SAVE_VERSION,
+      discovered: [...state.discovered],
+      history: state.history
+    }));
+  } catch(e) { /* 保存不可でも続行 */ }
+}
+function loadState(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.v !== SAVE_VERSION) return;           // 版違いのセーブは読まない
+    const valid = new Set(FRAGMENTS.map(f => f.id));
+    (data.discovered || []).forEach(id => { if (valid.has(id)) state.discovered.add(id); });
+    state.history = (data.history || []).filter(h => h && typeof h.term === "string" && typeof h.hits === "number");
+  } catch(e) { /* 壊れたセーブは無視して新規開始 */ }
+}
+function clearSaved(){
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+const KEYS = FRAGMENTS.filter(f=>f.key).map(f=>f.id); // ★＝物語上の核（表示・演出用）
+/* 所見（エンディング）の解放条件（v9）：
+ * 白状(j)・懺悔(m)・死霊(s)の全断片を照会済みであること。keyの3つだけでは開かない。 */
+const ENDING_IDS = FRAGMENTS.filter(f => /^[jms]\d/.test(f.id)).map(f => f.id);
+
+const $ = s => document.querySelector(s);
+const q = $("#q"), list = $("#list"), rcount = $("#rcount"),
+      init = $("#init"), results = $("#results");
+
+/* タグのみ照合。完全一致＋「タグ⊂検索語」の一方向のみ。
+ * 「検索語⊂タグ」方向は廃止（v6）：「ため」→「ためら」「の目」→「夫の目」のように
+ * タグ内の任意の2文字で深層が開いてしまい、鎖の順序保証が壊れるため。
+ * 活用対応（「蔑ん」タグに「蔑んだ」でヒット）はこの一方向で維持される。
+ * 「見えない」のような前方一致で引かせたい場合は、その形をタグとして明示的に追加する。 */
+function matchTag(t, term){
+  return t === term || (t.length >= 2 && term.includes(t));
+}
+
+function search(term){
+  term = (term||"").trim();
+  q.value = term;
+  init.classList.add("hidden");
+
+  let hits = [];
+  if (term) {
+    // タグ一致：未発見の断片もここでだけ開く
+    const tagHits = FRAGMENTS.filter(f => f.tags.some(t => matchTag(t, term)));
+    // 本文一致：発見済みの断片のみ。検索した語を含む既読の調書もちゃんと並ぶ
+    const textHits = term.length >= 2
+      ? FRAGMENTS.filter(f => state.discovered.has(f.id) && f.text.includes(term))
+      : [];
+    const seen = new Set();
+    hits = [...tagHits, ...textHits].filter(f => seen.has(f.id) ? false : (seen.add(f.id), true));
+    // 新規発見を先頭に、あとは資料順
+    hits.sort((a, b) =>
+      (state.discovered.has(a.id) ? 1 : 0) - (state.discovered.has(b.id) ? 1 : 0)
+      || FRAGMENTS.indexOf(a) - FRAGMENTS.indexOf(b));
+  }
+
+  renderResults(`「${term}」 — 該当 ${hits.length} 件`, hits,
+    `「${escapeHtml(term)}」に該当する調書なし。<br/>調書に出てきた言葉を、そのまま打ってみてください。`);
+  if (term) {
+    state.history = state.history.filter(h => h.term !== term); // 同語は最新のみ残す
+    state.history.unshift({ term, hits: hits.length });
+  }
+  hits.forEach(f => state.discovered.add(f.id));
+  highlightMap(new Set(hits.map(f=>f.loc)));
+  updateProgress();
+  if (ENDING_IDS.every(id => state.discovered.has(id))) {
+    const ep=$("#epilogue");
+    if(ep.classList.contains("hidden")){ ep.classList.remove("hidden");
+      if(window.goatcounter&&goatcounter.count)goatcounter.count({path:"ending",event:true}); }
+  }
+  saveState();
+}
+
+/* 絵図＝発見済み調書の場所絞り込み。未発見の調書はここからは出ない */
+function showLoc(loc){
+  init.classList.add("hidden");
+  const found = FRAGMENTS.filter(f => f.loc === loc && state.discovered.has(f.id));
+  renderResults(`絞り込み「${loc}」 — 照会簿より ${found.length} 件`, found,
+    `「${escapeHtml(loc)}」の調書は、まだ照会簿に上がっていません。`);
+  highlightMap(new Set([loc]));
+}
+
+function renderResults(label, hits, emptyMsg){
+  rcount.textContent = label;
+  if(!hits.length){
+    list.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+    return;
+  }
+  list.innerHTML = hits.map(f => {
+    const fresh = !state.discovered.has(f.id) ? " fresh" : "";
+    const note = SRC_NOTES[f.src] ? `<span class="srcnote">（${SRC_NOTES[f.src]}）</span>` : "";
+    return `<article class="card${fresh}">
+      <div class="meta"><span class="src">${f.src}${note}</span><span class="id">${f.idlab} · ${f.loc||"—"}</span></div>
+      <div class="body">${decorate(f.text)}</div>
+    </article>`;
+  }).join("");
+}
+
+/* COPY_TERMS の語の直後にコピーボタンを差し込む */
+function decorate(text){
+  let out = text;
+  for (const w of COPY_TERMS)
+    out = out.split(w).join(`${w}<button class="copybtn" data-copy="${w}" title="「${w}」を検索欄へコピー" aria-label="「${w}」をコピー">⧉</button>`);
+  return out;
+}
+
+function highlightMap(locs){
+  document.querySelectorAll(".node").forEach(n=>{
+    n.classList.toggle("hit", locs.has(n.dataset.loc));
+  });
+}
+
+function updateProgress(){ $("#progress").textContent = `断片 ${state.discovered.size} / ${FRAGMENTS.length}`; }
+
+/* ---- 履歴・設定パネル ---- */
+const histPanel = $("#historyPanel"), cfgPanel = $("#settingsPanel"),
+      clearConfirm = $("#clearConfirm");
+
+function togglePanel(panel){
+  const opening = panel.classList.contains("hidden");
+  histPanel.classList.add("hidden");
+  cfgPanel.classList.add("hidden");
+  clearConfirm.classList.add("hidden");
+  if (opening) panel.classList.remove("hidden");
+}
+
+function renderHistory(){
+  const el = $("#histList");
+  if (!state.history.length) {
+    el.innerHTML = `<div class="histempty">まだ照会の履歴はありません。</div>`;
+    return;
+  }
+  el.innerHTML = state.history.map(h =>
+    `<button class="histitem" data-term="${escapeHtml(h.term)}">
+       <span>${escapeHtml(h.term)}</span><span class="n">該当 ${h.hits} 件</span>
+     </button>`).join("");
+}
+
+/* 検索データの消去：履歴と発見状態をすべて白紙に戻す */
+function resetGame(){
+  clearSaved();
+  state.discovered.clear();
+  state.history = [];
+  q.value = "死体";
+  rcount.textContent = "調書：待機中";
+  list.innerHTML = "";
+  init.classList.remove("hidden");
+  $("#epilogue").classList.add("hidden");
+  highlightMap(new Set());
+  updateProgress();
+  histPanel.classList.add("hidden");
+  cfgPanel.classList.add("hidden");
+  clearConfirm.classList.add("hidden");
+}
+
+/* ゲーム終了：タブを閉じられない環境では終いの幕を下ろす */
+function quitGame(){
+  window.close();
+  let ov = document.getElementById("quitOverlay");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "quitOverlay";
+    ov.innerHTML = `<p>検非違使庁の照会を終了しました。<br/>真実は、藪の中。</p>
+      <button id="resumeBtn">照会を再開する</button>`;
+    document.body.appendChild(ov);
+    document.getElementById("resumeBtn").addEventListener("click", ()=>ov.remove());
+  }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// events
+list.addEventListener("click", e=>{
+  const b = e.target.closest(".copybtn");
+  if(!b) return;
+  const w = b.dataset.copy;
+  if (navigator.clipboard) navigator.clipboard.writeText(w).catch(()=>{});
+  q.value = w;                       // 検索欄にも入れる（押すだけで照会できる状態に）
+  b.textContent = "✓";
+  setTimeout(()=>{ b.textContent = "⧉"; }, 900);
+});
+$("#go").addEventListener("click", ()=>search(q.value));
+q.addEventListener("keydown", e=>{ if(e.key==="Enter") search(q.value); });
+
+$("#histBtn").addEventListener("click", ()=>{ renderHistory(); togglePanel(histPanel); });
+$("#cfgBtn").addEventListener("click", ()=>togglePanel(cfgPanel));
+$("#histList").addEventListener("click", e=>{
+  const b = e.target.closest(".histitem");
+  if(!b) return;
+  histPanel.classList.add("hidden");
+  search(b.dataset.term);
+});
+$("#cmdClear").addEventListener("click", ()=>clearConfirm.classList.toggle("hidden"));
+$("#clearYes").addEventListener("click", resetGame);
+$("#clearNo").addEventListener("click", ()=>clearConfirm.classList.add("hidden"));
+$("#cmdQuit").addEventListener("click", quitGame);
+
+// ---- イントロ（導入）オーバーレイ ----
+function dismissIntro(){
+  const ov = document.getElementById("introOverlay");
+  if (ov) ov.remove();
+  q.focus();
+  if(window.goatcounter&&goatcounter.count)goatcounter.count({path:"start",event:true});
+}
+$("#introEnter").addEventListener("click", dismissIntro);
+
+// ---- 起動時：セーブデータがあれば続きから ----
+loadState();
+updateProgress();
+if (state.discovered.size) {
+  init.classList.add("hidden");
+  rcount.textContent = `前回の照会簿を読み込みました — 断片 ${state.discovered.size} / ${FRAGMENTS.length}`;
+  if (ENDING_IDS.every(id => state.discovered.has(id))) $("#epilogue").classList.remove("hidden");
+}
+document.querySelectorAll(".node").forEach(n=>{
+  n.addEventListener("click", ()=>showLoc(n.dataset.loc));
+  n.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); showLoc(n.dataset.loc);} });
+});
+</script>
+<!-- プライバシー配慮の簡易アクセス解析：GoatCounter（Cookie不要・個人情報なし）
+     公開後、YOURCODE を自分のGoatCounterコードに置き換えてください。 -->
+<script data-goatcounter="https://YOURCODE.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
